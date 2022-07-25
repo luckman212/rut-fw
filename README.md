@@ -1,3 +1,3 @@
 # rut-fw
 
-Store config files for Teltonika RUTxxx remote firmware updates
+Config files for Teltonika RUTxxx remote firmware updates
