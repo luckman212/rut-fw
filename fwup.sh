@@ -10,7 +10,7 @@ BN=$(basename $0)
 cat <<EOF
 
 usage: $BN [-i [hour] [min]] [-u]
-        -i  install (default=$HR:$MN)
+        -i  install (default: ${HR}h ${MN}m)
         -u  uninstall
 
 When run without parameters, will check for an update and install it if there is one available.
