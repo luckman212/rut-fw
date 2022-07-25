@@ -3,14 +3,14 @@
 THIS=$(realpath $0)
 ID='fwup'
 CT='/etc/crontabs/root'
-HR=4 #default time = 4am
+HR=4; MN=0 #default time = 4:00am
 
 _usage() {
 BN=$(basename $0)
 cat <<EOF
 
-usage: $BN [-i [hour]] [-u]
-        -i  install (default=$HR)
+usage: $BN [-i [hour] [min]] [-u]
+        -i  install (default=$HR:$MN)
         -u  uninstall
 
 When run without parameters, will check for an update and install it if there is one available.
@@ -35,9 +35,9 @@ if [ "$1" == "-u" ]; then
 fi
 if [ "$1" == "-i" ]; then
   _fwup_rm
-  echo "0 ${2:-$HR} * * * $THIS >/dev/null 2>&1 #${ID}" >> $CT
+  echo "0 ${2:-$HR} ${3:-$MN} * * $THIS >/dev/null 2>&1 #${ID}" >> $CT
   /etc/init.d/cron reload
-  echo "$THIS has been installed and scheduled @ ${2:-$HR}"
+  echo "$THIS has been installed and scheduled @ ${2:-$HR} ${3:-$MN}"
   exit
 fi
 
