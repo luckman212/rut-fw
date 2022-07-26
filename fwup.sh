@@ -1,13 +1,13 @@
 #!/bin/sh
 
-THIS=$(realpath $0)
+THIS=$(realpath "$0")
 REPO='https://raw.githubusercontent.com/luckman212/rut-fw/main'
 ID='fwup'
 CT='/etc/crontabs/root'
 HR=4; MN=45 #default time = 4:45am
 
 _usage() {
-BN=$(basename $0)
+BN=$(basename "$0")
 cat <<EOF
 
 usage: $BN [-i [hour] [min]] [-u] [-v]
@@ -23,7 +23,7 @@ EOF
 
 _check_version() {
   want_hash=$(
-    /usr/bin/curl -s -m10 -o- "$REPO/$ID.sh" 2>/dev/null |
+    /usr/bin/curl -s -m10 -o- "${REPO}/${ID}.sh" 2>/dev/null |
     /usr/bin/sha256sum - |
     /usr/bin/awk '{ print $1 }'
   )
@@ -33,7 +33,7 @@ _check_version() {
   this_hash=$(/usr/bin/sha256sum "$THIS" | /usr/bin/awk '{ print $1 }')
   if [ "$this_hash" != "$want_hash" ]; then
     _log 'new version available! download using:'
-    echo "curl -o $ID.sh $REPO/$ID.sh"
+    echo "curl -o ${ID}.sh ${REPO}/${ID}.sh"
   else
     _log "this is the latest version"
   fi
@@ -85,16 +85,16 @@ if [ -z "$cur_fw" ] || [ -z "$model" ]; then
 fi
 
 model_friendly=$(
-  /usr/bin/curl -s -m10 "$REPO/model_map.cfg" 2>/dev/null |
+  /usr/bin/curl -s -m10 "${REPO}/model_map.cfg" 2>/dev/null |
   /usr/bin/awk -F'|' -v m="$model" '$1 ~ m { print $2 }'
 )
 if [ -z "$model_friendly" ]; then
   _log 'failed to match model'
   exit 1
 fi
-/usr/bin/curl -s -m10 -o /tmp/$ID_want_fw "$REPO/${model_friendly}.cfg" 2>/dev/null
-IFS='|' read -r want_fw url </tmp/$ID_want_fw
-rm /tmp/$ID_want_fw
+/usr/bin/curl -s -m10 -o "/tmp/${ID}_want_fw" "${REPO}/${model_friendly}.cfg" 2>/dev/null
+IFS='|' read -r want_fw url <"/tmp/${ID}_want_fw"
+rm "/tmp/${ID}_want_fw" 2>/dev/null
 if [ -z "$want_fw" ] || [ -z "$url" ]; then
   _log 'failed to fetch wanted firmware version'
   exit 1
@@ -107,19 +107,18 @@ want_fw:  $want_fw
 
 EOF
 
-if [ "$cur_fw" == "${want_fw}" ]; then
+if [ "$cur_fw" = "${want_fw}" ]; then
   _log 'firmware is already up-to-date'
   exit 0
 fi
 _log 'downloading firmware'
-/usr/bin/curl -m300 -o /tmp/firmware.img $url 2>/dev/null
-if [ $? -ne 0 ] || [ ! -e /tmp/firmware.img ]; then
+rm /tmp/firmware.img 2>/dev/null
+if ! /usr/bin/curl -m300 -o /tmp/firmware.img "$url" 2>/dev/null; then
   _log 'failed to download firmware'
   exit 1
 fi
 _log 'download complete, verifying image'
-/sbin/sysupgrade -T firmware.img
-if [ $? -ne 0 ]; then
+if ! /sbin/sysupgrade -T /tmp/firmware.img; then
   _log 'invalid image'
   exit 1
 fi
