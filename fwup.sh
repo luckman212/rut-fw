@@ -32,6 +32,7 @@ _check_version() {
   fi
   this_hash=$(/usr/bin/sha256sum "$THIS" | /usr/bin/awk '{ print $1 }')
 cat <<EOF
+a
 want_hash: $want_hash
 this_hash: $this_hash
 EOF
