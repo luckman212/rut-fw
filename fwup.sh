@@ -22,21 +22,21 @@ When run without parameters, will check for an update and install it if there is
 EOF
 }
 
-_save_checksum() {
-  sha256sum "$THIS" | awk '{ print $1 }' >checksum
-}
-
 _check_version() {
-  want_checksum=$(/usr/bin/curl -s -m10 -o- "$REPO/checksum" 2>/dev/null)
-  if [ -z "$want_checksum" ]; then
-    _log 'failed to fetch checksum from online repo'
+  want_hash=$(
+    /usr/bin/curl -s -m10 -o- "$REPO/$ID.sh" 2>/dev/null |
+    sha256sum "$THIS" |
+    awk '{ print $1 }'
+  )
+  if [ -z "$want_hash" ]; then
+    _log 'failed to fetch script from online repo'
   fi
-  this_checksum=$(/usr/bin/sha256sum "$THIS" | /usr/bin/awk '{ print $1 }')
-  if [ "$this_checksum" != "$want_checksum" ]; then
+  this_hash=$(/usr/bin/sha256sum "$THIS" | /usr/bin/awk '{ print $1 }')
+  if [ "$this_hash" != "$want_hash" ]; then
     _log 'new version available!'
     echo "$REPO"
   else
-    _log "no new version available"
+    _log "this is the latest version"
   fi
 }
 
@@ -70,10 +70,6 @@ case $1 in
     _fwup_rm
     /etc/init.d/cron reload
     _log "$THIS has been uninstalled"
-    exit
-    ;;
-  --checksum)
-    _save_checksum
     exit
     ;;
 esac
