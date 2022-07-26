@@ -4,6 +4,7 @@ THIS=$(realpath "$0")
 REPO='https://raw.githubusercontent.com/luckman212/rut-fw/main'
 ID='fwup'
 CT='/etc/crontabs/root'
+IMG='/tmp/firmware.img'
 HR=4; MN=45 #default time = 4:45am
 
 _usage() {
@@ -21,32 +22,35 @@ usage: $BN [-i [hour] [min]] [-u] [-v]
 EOF
 }
 
+_log() {
+  logger -t $ID "$1"
+  echo "$1"
+}
+
 _check_version() {
   want_hash=$(
-    /usr/bin/curl -s -m10 -o- "${REPO}/${ID}.sh" 2>/dev/null |
-    /usr/bin/sha256sum - |
-    /usr/bin/awk '{ print $1 }'
+    curl -s -m10 -o- "${REPO}/${ID}.sh" 2>/dev/null |
+    sha256sum - |
+    awk '{ print $1 }'
   )
   if [ -z "$want_hash" ]; then
-    _log 'failed to fetch script from online repo'
+    echo 'failed to fetch script from online repo'
   fi
-  this_hash=$(/usr/bin/sha256sum "$THIS" | /usr/bin/awk '{ print $1 }')
+  this_hash=$(
+    sha256sum "$THIS" |
+    awk '{ print $1 }'
+  )
   if [ "$this_hash" != "$want_hash" ]; then
-    _log 'new version available! download using:'
+    echo 'new version available! download using:'
     echo "curl -o ${ID}.sh ${REPO}/${ID}.sh"
   else
-    _log "this is the latest version"
+    echo "this is the latest version"
   fi
 }
 
 _fwup_rm() {
   [ -f /etc/crontabs/root ] || return
-  /bin/sed -i "/#${ID}$/d" $CT
-}
-
-_log() {
-  /usr/bin/logger -t $ID "$1"
-  echo "$1"
+  sed -i "/#${ID}$/d" $CT
 }
 
 case $1 in
@@ -75,7 +79,7 @@ case $1 in
   *) echo "invalid parameter: $1"; exit 1;;
 esac
 
-/usr/bin/logger -t $ID "script started"
+logger -t $ID "script started"
 
 read -r cur_fw </etc/version
 model=$(uci -q get system.system.device_code)
@@ -85,14 +89,14 @@ if [ -z "$cur_fw" ] || [ -z "$model" ]; then
 fi
 
 model_friendly=$(
-  /usr/bin/curl -s -m10 "${REPO}/model_map.cfg" 2>/dev/null |
-  /usr/bin/awk -F'|' -v m="$model" '$1 ~ m { print $2 }'
+  curl -s -m10 "${REPO}/model_map.cfg" 2>/dev/null |
+  awk -F'|' -v m="$model" '$1 ~ m { print $2 }'
 )
 if [ -z "$model_friendly" ]; then
   _log 'failed to match model'
   exit 1
 fi
-/usr/bin/curl -s -m10 -o "/tmp/${ID}_want_fw" "${REPO}/${model_friendly}.cfg" 2>/dev/null
+curl -s -m10 -o "/tmp/${ID}_want_fw" "${REPO}/${model_friendly}.cfg" 2>/dev/null
 IFS='|' read -r want_fw url <"/tmp/${ID}_want_fw"
 rm "/tmp/${ID}_want_fw" 2>/dev/null
 if [ -z "$want_fw" ] || [ -z "$url" ]; then
@@ -112,16 +116,16 @@ if [ "$cur_fw" = "${want_fw}" ]; then
   exit 0
 fi
 _log 'downloading firmware'
-rm /tmp/firmware.img 2>/dev/null
-if ! /usr/bin/curl -m300 -o /tmp/firmware.img "$url" 2>/dev/null; then
+rm $IMG 2>/dev/null
+if ! curl -m300 -o $IMG "$url" 2>/dev/null; then
   _log 'failed to download firmware'
   exit 1
 fi
 _log 'download complete, verifying image'
-if ! /sbin/sysupgrade -T /tmp/firmware.img; then
-  _log 'invalid image'
+if ! sysupgrade -T $IMG; then
+  _log 'invalid image, aborting'
   exit 1
 fi
 _log 'starting firmware upgrade'
-/sbin/sysupgrade -c -v /tmp/firmware.img
+sysupgrade -c -v $IMG
 _log 'done, system will now reboot'
