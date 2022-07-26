@@ -1,14 +1,31 @@
 #!/bin/sh
 
 THIS=$(realpath "$0")
+BN=$(basename "$0")
 REPO='https://raw.githubusercontent.com/luckman212/rut-fw/main'
 ID='fwup'
+PIDFILE=/var/run/$ID.pid
 CT='/etc/crontabs/root'
 IMG='/tmp/firmware.img'
 HR=4; MN=45 #default time = 4:45am
 
+_lock() {
+  if [ -f $PIDFILE ]; then
+    read -r PID <$PIDFILE
+    if [ -d "/proc/$PID" ]; then
+      _log "a copy of this script [PID:$PID] already running, aborting"
+      exit 1
+    fi
+  fi
+  echo $$ >$PIDFILE
+}
+
+_exit() {
+  rm /var/run/$ID.pid 2>/dev/null
+  exit $1
+}
+
 _usage() {
-BN=$(basename "$0")
 cat <<EOF
 
 usage: $BN [-i [hour] [min]] [-u] [-v]
@@ -81,11 +98,14 @@ esac
 
 logger -t $ID "script started"
 
+#mutex - below here use _exit()
+_lock
+
 read -r cur_fw </etc/version
 model=$(uci -q get system.system.device_code)
 if [ -z "$cur_fw" ] || [ -z "$model" ]; then
   _log 'failed to read required system vars'
-  exit 1
+  _exit 1
 fi
 
 model_friendly=$(
@@ -94,14 +114,14 @@ model_friendly=$(
 )
 if [ -z "$model_friendly" ]; then
   _log 'failed to match model'
-  exit 1
+  _exit 1
 fi
 curl -s -m10 -o "/tmp/${ID}_want_fw" "${REPO}/${model_friendly}.cfg" 2>/dev/null
 IFS='|' read -r want_fw url <"/tmp/${ID}_want_fw"
 rm "/tmp/${ID}_want_fw" 2>/dev/null
 if [ -z "$want_fw" ] || [ -z "$url" ]; then
   _log 'failed to fetch wanted firmware version'
-  exit 1
+  _exit 1
 fi
 
 cat <<EOF
@@ -113,19 +133,21 @@ EOF
 
 if [ "$cur_fw" = "${want_fw}" ]; then
   _log 'firmware is already up-to-date'
-  exit 0
+  _exit 0
 fi
 _log 'downloading firmware'
 rm $IMG 2>/dev/null
 if ! curl -m300 -o $IMG "$url" 2>/dev/null; then
   _log 'failed to download firmware'
-  exit 1
+  _exit 1
 fi
 _log 'download complete, verifying image'
 if ! sysupgrade -T $IMG; then
   _log 'invalid image, aborting'
-  exit 1
+  _exit 1
 fi
 _log 'starting firmware upgrade'
 sysupgrade -c -v $IMG
 _log 'done, system will now reboot'
+
+_exit
