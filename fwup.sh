@@ -13,15 +13,17 @@ _lock() {
   if [ -f $PIDFILE ]; then
     read -r PID <$PIDFILE
     if [ -d "/proc/$PID" ]; then
-      _log "a copy of this script [PID:$PID] already running, aborting"
+      _log "lockfile [PID:$PID] present, aborting"
       exit 1
     fi
   fi
   echo $$ >$PIDFILE
+  logger -t $ID 'lock acquired'
 }
 
 _exit() {
   rm /var/run/$ID.pid 2>/dev/null
+  logger -t $ID 'lock released'
   exit $1
 }
 
