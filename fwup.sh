@@ -4,9 +4,7 @@ THIS=$(realpath $0)
 REPO='https://raw.githubusercontent.com/luckman212/rut-fw/main'
 ID='fwup'
 CT='/etc/crontabs/root'
-HR=4; MN=1 #default time = 4:00am
-
-/usr/bin/logger -t $ID "started"
+HR=4; MN=45 #default time = 4:45am
 
 _usage() {
 BN=$(basename $0)
@@ -33,6 +31,10 @@ _check_version() {
     _log 'failed to fetch script from online repo'
   fi
   this_hash=$(/usr/bin/sha256sum "$THIS" | /usr/bin/awk '{ print $1 }')
+cat <<EOF
+want_hash: $want_hash
+this_hash: $this_hash
+EOF
   if [ "$this_hash" != "$want_hash" ]; then
     _log 'new version available!'
     echo "run \`curl -o $ID.sh $REPO/$ID.sh\` to download it"
@@ -73,7 +75,11 @@ case $1 in
     _log "$THIS has been uninstalled"
     exit
     ;;
+  '') : ;; # no params
+  *) echo "invalid parameter: $1"; exit 1;;
 esac
+
+/usr/bin/logger -t $ID "script started"
 
 read -r cur_fw </etc/version
 model=$(uci -q get system.system.device_code)
