@@ -26,13 +26,11 @@ _check_version() {
   want_checksum=$(/usr/bin/curl -s -m10 -o- "$REPO/checksum" 2>/dev/null)
   if [ -z "$want_checksum" ]; then
     _log 'failed to fetch checksum from online repo'
-    exit 1
   fi
   this_checksum=$(/usr/bin/sha256sum "$THIS" | /usr/bin/awk '{ print $1 }')
   if [ "$this_checksum" != "$want_checksum" ]; then
     _log 'new version available'
     echo "see ==> $REPO"
-    exit
   else
     _log "no new version available"
   fi
@@ -54,6 +52,7 @@ if [ "$1" == "-h" ]; then
 fi
 if [ "$1" == "-v" ]; then
   _check_version
+  exit
 fi
 if [ "$1" == "-u" ]; then
   _fwup_rm
