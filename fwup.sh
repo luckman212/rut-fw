@@ -17,7 +17,8 @@ usage: $BN [-i [hour] [min]] [-u] [-v]
         -u  uninstall
         -v  check version
 
-When run without parameters, will check for an update and install it if there is one available.
+        when run without parameters, the script will check
+        for and install an update, if one is available.
 
 EOF
 }
