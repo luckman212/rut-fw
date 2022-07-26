@@ -22,6 +22,10 @@ When run without parameters, will check for an update and install it if there is
 EOF
 }
 
+_save_checksum() {
+  sha256sum "$THIS" | awk '{ print $1 }' >checksum
+}
+
 _check_version() {
   want_checksum=$(/usr/bin/curl -s -m10 -o- "$REPO/checksum" 2>/dev/null)
   if [ -z "$want_checksum" ]; then
@@ -29,8 +33,8 @@ _check_version() {
   fi
   this_checksum=$(/usr/bin/sha256sum "$THIS" | /usr/bin/awk '{ print $1 }')
   if [ "$this_checksum" != "$want_checksum" ]; then
-    _log 'new version available'
-    echo "see ==> $REPO"
+    _log 'new version available!'
+    echo "$REPO"
   else
     _log "no new version available"
   fi
@@ -46,27 +50,33 @@ _log() {
   echo "$1"
 }
 
-if [ "$1" == "-h" ]; then
-  _usage
-  exit
-fi
-if [ "$1" == "-v" ]; then
-  _check_version
-  exit
-fi
-if [ "$1" == "-u" ]; then
-  _fwup_rm
-  /etc/init.d/cron reload
-  _log "$THIS has been uninstalled"
-  exit
-fi
-if [ "$1" == "-i" ]; then
-  _fwup_rm
-  echo "${3:-$MN} ${2:-$HR} * * * $THIS >/dev/null 2>&1 #${ID}" >>$CT
-  /etc/init.d/cron reload
-  _log "$THIS has been installed and scheduled @ ${2:-$HR} ${3:-$MN}"
-  exit
-fi
+case $1 in
+  -h|--help)
+    _usage
+    exit
+    ;;
+  -v|--version)
+    _check_version
+    exit
+    ;;
+  -i|--install)
+    _fwup_rm
+    echo "${3:-$MN} ${2:-$HR} * * * $THIS >/dev/null 2>&1 #${ID}" >>$CT
+    /etc/init.d/cron reload
+    _log "$THIS has been installed and scheduled @ ${2:-$HR} ${3:-$MN}"
+    exit
+    ;;
+  -u|--uninstall)
+    _fwup_rm
+    /etc/init.d/cron reload
+    _log "$THIS has been uninstalled"
+    exit
+    ;;
+  --checksum)
+    _save_checksum
+    exit
+    ;;
+esac
 
 read -r cur_fw </etc/version
 model=$(uci -q get system.system.device_code)
