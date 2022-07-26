@@ -54,7 +54,16 @@ if [ -z "$cur_fw" ] || [ -z "$model" ]; then
   _log 'failed to read required system vars'
   exit 1
 fi
-/usr/bin/curl -s -m10 -o /tmp/want_fw "https://raw.githubusercontent.com/luckman212/rut-fw/main/${model}.cfg"
+
+/usr/bin/curl -s -m10 -o /tmp/model_map "https://raw.githubusercontent.com/luckman212/rut-fw/main/model_map.cfg"
+/usr/bin/grep "$model" /tmp/model_map >/tmp/model_this
+IFS='|' read -r model_raw model_friendly </tmp/model_this
+if [ -z "$model_friendly" ]; then
+  _log 'failed to match model'
+  exit 1
+fi
+
+/usr/bin/curl -s -m10 -o /tmp/want_fw "https://raw.githubusercontent.com/luckman212/rut-fw/main/${model_friendly}.cfg"
 IFS='|' read -r want_fw url </tmp/want_fw
 if [ -z "$want_fw" ] || [ -z "$url" ]; then
   _log 'failed to fetch wanted firmware version'
