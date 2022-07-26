@@ -31,14 +31,9 @@ _check_version() {
     _log 'failed to fetch script from online repo'
   fi
   this_hash=$(/usr/bin/sha256sum "$THIS" | /usr/bin/awk '{ print $1 }')
-cat <<EOF
-a
-want_hash: $want_hash
-this_hash: $this_hash
-EOF
   if [ "$this_hash" != "$want_hash" ]; then
-    _log 'new version available!'
-    echo "run \`curl -o $ID.sh $REPO/$ID.sh\` to download it"
+    _log 'new version available! download using:'
+    echo "curl -o $ID.sh $REPO/$ID.sh"
   else
     _log "this is the latest version"
   fi
