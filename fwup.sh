@@ -34,7 +34,7 @@ _check_version() {
   this_hash=$(/usr/bin/sha256sum "$THIS" | /usr/bin/awk '{ print $1 }')
   if [ "$this_hash" != "$want_hash" ]; then
     _log 'new version available!'
-    echo "$REPO"
+    echo "run \`curl -o $ID.sh $REPO/$ID.sh\` to download it"
   else
     _log "this is the latest version"
   fi
@@ -82,14 +82,14 @@ if [ -z "$cur_fw" ] || [ -z "$model" ]; then
 fi
 
 model_friendly=$(
-  /usr/bin/curl -s -m10 "$REPO/model_map.cfg" |
+  /usr/bin/curl -s -m10 "$REPO/model_map.cfg" 2>/dev/null |
   /usr/bin/awk -F'|' -v m="$model" '$1 ~ m { print $2 }'
 )
 if [ -z "$model_friendly" ]; then
   _log 'failed to match model'
   exit 1
 fi
-/usr/bin/curl -s -m10 -o /tmp/$ID_want_fw "https://raw.githubusercontent.com/luckman212/rut-fw/main/${model_friendly}.cfg"
+/usr/bin/curl -s -m10 -o /tmp/$ID_want_fw "$REPO/${model_friendly}.cfg" 2>/dev/null
 IFS='|' read -r want_fw url </tmp/$ID_want_fw
 rm /tmp/$ID_want_fw
 if [ -z "$want_fw" ] || [ -z "$url" ]; then
@@ -109,7 +109,7 @@ if [ "$cur_fw" == "${want_fw}" ]; then
   exit 0
 fi
 _log 'downloading firmware'
-/usr/bin/curl -m300 -o /tmp/firmware.img $url
+/usr/bin/curl -m300 -o /tmp/firmware.img $url 2>/dev/null
 if [ $? -ne 0 ] || [ ! -e /tmp/firmware.img ]; then
   _log 'failed to download firmware'
   exit 1
