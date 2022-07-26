@@ -81,16 +81,17 @@ if [ -z "$cur_fw" ] || [ -z "$model" ]; then
   exit 1
 fi
 
-/usr/bin/curl -s -m10 -o /tmp/$ID_model_map "$REPO/model_map.cfg"
-/usr/bin/grep "$model" /tmp/$ID_model_map >/tmp/$ID_model_this
-IFS='|' read -r model_raw model_friendly </tmp/$ID_model_this
+model_friendly=$(
+  /usr/bin/curl -s -m10 "$REPO/model_map.cfg" |
+  /usr/bin/awk -F'|' -v m="$model" '$1 ~ m { print $2 }'
+)
 if [ -z "$model_friendly" ]; then
   _log 'failed to match model'
   exit 1
 fi
-
 /usr/bin/curl -s -m10 -o /tmp/$ID_want_fw "https://raw.githubusercontent.com/luckman212/rut-fw/main/${model_friendly}.cfg"
 IFS='|' read -r want_fw url </tmp/$ID_want_fw
+rm /tmp/$ID_want_fw
 if [ -z "$want_fw" ] || [ -z "$url" ]; then
   _log 'failed to fetch wanted firmware version'
   exit 1
