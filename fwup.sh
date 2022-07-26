@@ -5,6 +5,8 @@ ID='fwup'
 CT='/etc/crontabs/root'
 HR=4; MN=0 #default time = 4:00am
 
+/usr/bin/logger -t $ID "started"
+
 _usage() {
 BN=$(basename $0)
 cat <<EOF
@@ -23,6 +25,11 @@ _fwup_rm() {
   /bin/sed -i "/#${ID}$/d" $CT
 }
 
+_log() {
+  /usr/bin/logger -t $ID "$1"
+  echo "$1"
+}
+
 if [ "$1" == "-h" ]; then
   _usage
   exit
@@ -30,27 +37,27 @@ fi
 if [ "$1" == "-u" ]; then
   _fwup_rm
   /etc/init.d/cron reload
-  echo "$THIS has been uninstalled"
+  _log "$THIS has been uninstalled"
   exit
 fi
 if [ "$1" == "-i" ]; then
   _fwup_rm
-  echo "0 ${2:-$HR} ${3:-$MN} * * $THIS >/dev/null 2>&1 #${ID}" >> $CT
+  echo "${3:-$MN} ${2:-$HR} * * * $THIS >/dev/null 2>&1 #${ID}" >> $CT
   /etc/init.d/cron reload
-  echo "$THIS has been installed and scheduled @ ${2:-$HR} ${3:-$MN}"
+  _log "$THIS has been installed and scheduled @ ${2:-$HR} ${3:-$MN}"
   exit
 fi
 
 read -r cur_fw </etc/version
 model=$(uci -q get system.system.device_code)
 if [ -z "$cur_fw" ] || [ -z "$model" ]; then
-  echo 'failed to read required system vars'
+  _log 'failed to read required system vars'
   exit 1
 fi
 /usr/bin/curl -s -m10 -o /tmp/want_fw "https://raw.githubusercontent.com/luckman212/rut-fw/main/${model}.cfg"
 IFS='|' read -r want_fw url </tmp/want_fw
 if [ -z "$want_fw" ] || [ -z "$url" ]; then
-  echo 'failed to fetch wanted firmware version'
+  _log 'failed to fetch wanted firmware version'
   exit 1
 fi
 
@@ -62,21 +69,21 @@ want_fw:  $want_fw
 EOF
 
 if [ "$cur_fw" == "${want_fw}" ]; then
-  echo 'firmware is already up-to-date'
+  _log 'firmware is already up-to-date'
   exit 0
 fi
-echo 'downloading firmware'
+_log 'downloading firmware'
 /usr/bin/curl -m300 -o /tmp/firmware.img $url
 if [ $? -ne 0 ] || [ ! -e /tmp/firmware.img ]; then
-  echo 'failed to download firmware'
+  _log 'failed to download firmware'
   exit 1
 fi
-echo 'download complete, verifying image'
+_log 'download complete, verifying image'
 /sbin/sysupgrade -T firmware.img
 if [ $? -ne 0 ]; then
-  echo 'invalid image'
+  _log 'invalid image'
   exit 1
 fi
-echo 'starting firmware upgrade'
+_log 'starting firmware upgrade'
 /sbin/sysupgrade -c -v /tmp/firmware.img
-echo 'done, system will now reboot'
+_log 'done, system will now reboot'
