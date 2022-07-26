@@ -1,3 +1,3 @@
 # rut-fw
 
-Teltonika firmware update script for integration with RMS.
+Firmware update script for integration with [Teltonika RMS](https://rms.teltonika-networks.com/).
