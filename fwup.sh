@@ -4,7 +4,7 @@ THIS=$(realpath $0)
 REPO='https://raw.githubusercontent.com/luckman212/rut-fw/main'
 ID='fwup'
 CT='/etc/crontabs/root'
-HR=4; MN=0 #default time = 4:00am
+HR=4; MN=1 #default time = 4:00am
 
 /usr/bin/logger -t $ID "started"
 
