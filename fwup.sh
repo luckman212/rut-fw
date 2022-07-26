@@ -25,8 +25,8 @@ EOF
 _check_version() {
   want_hash=$(
     /usr/bin/curl -s -m10 -o- "$REPO/$ID.sh" 2>/dev/null |
-    sha256sum "$THIS" |
-    awk '{ print $1 }'
+    /usr/bin/sha256sum - |
+    /usr/bin/awk '{ print $1 }'
   )
   if [ -z "$want_hash" ]; then
     _log 'failed to fetch script from online repo'
