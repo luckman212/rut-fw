@@ -148,8 +148,8 @@ if ! sysupgrade -T $IMG; then
   _log 'invalid image, aborting'
   _exit 1
 fi
-_log 'starting firmware upgrade'
+_log 'starting firmware upgrade, system will now reboot'
+_fwup_rm
 sysupgrade -c -v $IMG
-_log 'done, system will now reboot'
 
 _exit
