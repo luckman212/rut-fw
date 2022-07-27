@@ -3,7 +3,7 @@
 THIS=$(realpath "$0")
 BN=$(basename "$0")
 REPO='https://raw.githubusercontent.com/luckman212/rut-fw/main'
-ID='fwup'
+ID='fwup' #do not use /'s in the ID or sed will break
 PIDFILE=/var/run/$ID.pid
 CT='/etc/crontabs/root'
 IMG='/tmp/firmware.img'
@@ -72,7 +72,7 @@ _fwup_rm() {
     sed -i "/#${ID}$/d" $CT
   fi
   if [ -f /etc/sysupgrade.conf ]; then
-    sed -i "/^${THIS}$/d" /etc/sysupgrade.conf
+    sed -i "/^${THIS//\//\\/}$/d" /etc/sysupgrade.conf
   fi
 }
 
