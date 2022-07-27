@@ -68,8 +68,12 @@ _check_version() {
 }
 
 _fwup_rm() {
-  [ -f /etc/crontabs/root ] || return
-  sed -i "/#${ID}$/d" $CT
+  if [ -f $CT ]; then
+    sed -i "/#${ID}$/d" $CT
+  fi
+  if [ -f /etc/sysupgrade.conf ]; then
+    sed -i "/^${THIS}$/d" /etc/sysupgrade.conf
+  fi
 }
 
 case $1 in
@@ -83,6 +87,7 @@ case $1 in
     ;;
   -i|--install)
     _fwup_rm
+    echo "$THIS" >>/etc/sysupgrade.conf
     echo "${3:-$MN} ${2:-$HR} * * * $THIS >/dev/null 2>&1 #${ID}" >>$CT
     /etc/init.d/cron reload
     _log "$THIS has been installed and scheduled @ ${2:-$HR} ${3:-$MN}"
@@ -148,8 +153,7 @@ if ! sysupgrade -T $IMG; then
   _log 'invalid image, aborting'
   _exit 1
 fi
-_log 'starting firmware upgrade, system will now reboot'
-_fwup_rm
+_log 'starting firmware upgrade, system will reboot'
 sysupgrade -c -v $IMG
 
 _exit
