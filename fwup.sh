@@ -1,7 +1,8 @@
 #!/bin/sh
 
-THIS=$(realpath "$0")
 BN=$(basename "$0")
+#THIS=$(realpath "$0")
+THIS="$(cd "$(dirname -- "$0")"; pwd -P)/$BN"
 REPO='https://raw.githubusercontent.com/luckman212/rut-fw/main'
 ID='fwup' #do not use /'s in the ID or sed will break
 PIDFILE=/var/run/$ID.pid
@@ -75,6 +76,12 @@ _fwup_rm() {
     sed -i "/^${THIS//\//\\/}$/d" /etc/sysupgrade.conf
   fi
 }
+
+#sanity check
+if [ ! -e "$THIS" ]; then
+  _log 'failed to determine realpath of this script'
+  _exit 1
+fi
 
 case $1 in
   -h|--help)
