@@ -161,6 +161,7 @@ if ! sysupgrade -T $IMG; then
   _exit 1
 fi
 _log 'starting firmware upgrade, system will reboot'
+_fwup_rm
 sysupgrade -c -v $IMG
 
 _exit
