@@ -7,6 +7,7 @@ REPO='https://raw.githubusercontent.com/luckman212/rut-fw/main'
 ID='fwup' #do not use /'s in the ID or sed will break
 PIDFILE=/var/run/$ID.pid
 CT='/etc/crontabs/root'
+PDIR='/etc/rn'
 IMG='/tmp/firmware.img'
 HR=4; MN=45 #default time = 4:45am
 
@@ -73,7 +74,8 @@ _fwup_rm() {
     sed -i "/#${ID}$/d" $CT
   fi
   if [ -f /etc/sysupgrade.conf ]; then
-    sed -i "/^${THIS//\//\\/}$/d" /etc/sysupgrade.conf
+    #sed -i "/^${THIS//\//\\/}$/d" /etc/sysupgrade.conf
+    sed -i "/^${PDIR//\//\\/}$/d" /etc/sysupgrade.conf
   fi
 }
 
@@ -94,7 +96,7 @@ case $1 in
     ;;
   -i|--install)
     _fwup_rm
-    echo "$THIS" >>/etc/sysupgrade.conf
+    echo "$PDIR" >>/etc/sysupgrade.conf
     echo "${3:-$MN} ${2:-$HR} * * * $THIS >/dev/null 2>&1 #${ID}" >>$CT
     /etc/init.d/cron reload
     _log "$THIS has been installed and scheduled @ ${2:-$HR} ${3:-$MN}"
