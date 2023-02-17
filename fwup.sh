@@ -73,10 +73,14 @@ _fwup_rm() {
   if [ -f $CT ]; then
     sed -i "/#${ID}$/d" $CT
   fi
+}
+
+_ensure_pdir() {
   if [ -f /etc/sysupgrade.conf ]; then
     #sed -i "/^${THIS//\//\\/}$/d" /etc/sysupgrade.conf
     sed -i "/^${PDIR//\//\\/}$/d" /etc/sysupgrade.conf
   fi
+  echo "$PDIR" >>/etc/sysupgrade.conf
 }
 
 #sanity check
@@ -96,7 +100,7 @@ case $1 in
     ;;
   -i|--install)
     _fwup_rm
-    echo "$PDIR" >>/etc/sysupgrade.conf
+    _ensure_pdir
     echo "${3:-$MN} ${2:-$HR} * * * $THIS >/dev/null 2>&1 #${ID}" >>$CT
     /etc/init.d/cron reload
     _log "$THIS has been installed and scheduled @ ${2:-$HR} ${3:-$MN}"
