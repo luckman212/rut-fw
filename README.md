@@ -13,3 +13,6 @@ Basically, you have to
 - Use RMS task scheduler (to operate on multiple devices simultaneously) or directly via SSH on the device to schedule the upgrade.
 - From then on, device will keep auto-updating as you make changes to the cfg files, nothing left to do.
 - Run again with -u param to uninstall/disable
+
+> The Teltonika RUT240 has reached EOL status.
+
